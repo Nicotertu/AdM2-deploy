@@ -15,7 +15,7 @@ def preprocess(original_data):
 
     # Step 3: Handle outliers and missing data
     handle_outliers = FunctionTransformer(lambda data: cl.handle_outliers(data, method='Imputacion', imputation_method='MICE', winsorization_rate=None))
-    imputation = FunctionTransformer(lambda data: cl.compute_missing_data(data, method='KNN', testing=True, percentage=0.05))
+    imputation = FunctionTransformer(lambda data: cl.compute_missing_data(data, method='KNN', testing=False, percentage=0.05))
 
     # Step 4: Transformation of variables
     normalization = FunctionTransformer(lambda data: cl.transform_data(data, method='yeo-johnson', p_thres=0.05))

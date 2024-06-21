@@ -5,7 +5,7 @@ import pandas as pd
 
 def preprocess(original_data):
     modified_data = original_data.copy()
-    columns_to_keep = ['label', 'acousticness', 'instrumentalness', 'key', 'mode', 'time_signature']
+    columns_to_keep = ['acousticness', 'instrumentalness', 'key', 'mode', 'time_signature']
 
     # Step 1: 
     binarization = FunctionTransformer(lambda data: cl.binarize_variables(data))

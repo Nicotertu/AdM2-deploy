@@ -111,7 +111,7 @@ async def predict(file: UploadFile):
             print("Unsupported file format")
             raise HTTPException(415, detail='Unsupported file format. Please upload a CSV file.')
 
-        df = pd.read_csv(io.BytesIO(contents))
+        df = pd.read_csv(io.BytesIO(contents), sep=',')
         print("CSV file parsed successfully")
         print(df.head())
 

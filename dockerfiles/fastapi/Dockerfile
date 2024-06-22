@@ -6,5 +6,6 @@ RUN apt-get update && apt-get install -y curl
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r /opt/app/requirements.txt
 COPY . /opt/app
+COPY ./static /app/static
 
 EXPOSE 8800

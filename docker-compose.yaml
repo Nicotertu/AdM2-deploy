@@ -172,6 +172,8 @@ services:
       timeout: 5s
       start_period: 120s
       retries: 3
+    volumes:
+      - ./static:/app/static
 
   airflow-webserver:
     <<: *airflow-common

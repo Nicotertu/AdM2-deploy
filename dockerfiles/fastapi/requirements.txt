@@ -6,3 +6,4 @@ pandas
 scipy
 scikit-learn==1.4.2
 mlflow
+python-multipart

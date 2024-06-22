@@ -2,8 +2,10 @@ import io
 import joblib
 import mlflow
 import pandas as pd
+import os
 from typing import Literal
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -98,16 +100,46 @@ app = FastAPI()
 
 @app.get("/")
 async def read_root():
-    return JSONResponse(content=jsonable_encoder({"message": "Welcome to the Spotify API"}))
+    return HTMLResponse(content="""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>File Upload</title>
+        </head>
+        <body>
+            <h1>Upload a CSV File</h1>
+            <form id="upload-form" action="/batch_predict/" method="post" enctype="multipart/form-data">
+                <input type="file" name="file_upload" accept=".csv" required>
+                <button type="submit">Upload</button>
+            </form>
+            <div id="result"></div>
+
+            <script>
+                document.getElementById('upload-form').addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    const formData = new FormData(this);
+                    const response = await fetch(this.action, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.text();
+                    document.getElementById('result').innerHTML = result;
+                });
+            </script>
+        </body>
+        </html>
+        """)
 
 
 @app.post("/batch_predict/", response_model=list[ModelOutput])
-async def predict(file: UploadFile):
-    contents = await file.read()
+async def predict(file_upload: UploadFile):
+    contents = await file_upload.read()
     print("File read successfully")
 
     try:
-        if not file.content_type.startswith('text/csv'):
+        if not file_upload.content_type.startswith('text/csv'):
             print("Unsupported file format")
             raise HTTPException(415, detail='Unsupported file format. Please upload a CSV file.')
 
@@ -130,8 +162,65 @@ async def predict(file: UploadFile):
             for p in predictions.flatten()
         ]
 
-        return [ModelOutput(int_output=bool(p), song_output=song_predictions[i])
-                for i, p in enumerate(predictions.flatten())]
+        liked_count = sum(predictions)
+        disliked_count = len(predictions) - liked_count
+
+        #return [ModelOutput(int_output=bool(p), song_output=song_predictions[i])
+        #        for i, p in enumerate(predictions.flatten())]
+
+        html_start = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Prediction Results</title>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        </head>
+        <body>
+            <h1>Prediction Results</h1>
+            <table border="1">
+                <tr>
+                    <th>Liked songs</th>
+                    <th>Disliked songs</th>
+                </tr>
+                <tr>
+                    <td>"""
+        html_part1 = f"{liked_count}".strip()
+        html_part2 = """</td>
+                    <td>"""
+        html_part3 = f"{disliked_count}".strip()
+        html_part4 = """</td>
+                </tr>
+            </table>
+            <canvas id="pieChart" width="400" height="400"></canvas>
+            <script>
+                var ctx = document.getElementById('pieChart').getContext('2d');
+                var chart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Liked', 'Did not like'],
+                        datasets: [{
+                            data: [""".strip()
+
+        html_data = f"{liked_count}, {disliked_count}".strip()
+
+        html_end = """
+                            ],
+                            backgroundColor: ['#36a2eb', '#ff6384']
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            </script>
+        </body>
+        </html>
+        """.strip()
+
+        html_content = html_start + html_part1 + html_part2 + html_part3 + html_part4 + html_data + html_end
+        return HTMLResponse(content=html_content)
 
     except pd.errors.ParserError as e:
         print(f"CSV parsing error: {e}")
@@ -142,3 +231,39 @@ async def predict(file: UploadFile):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         raise HTTPException(500, detail='Internal server error during prediction.')
+    
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/batch_predict/", response_class=HTMLResponse)
+async def serve_index():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>File Upload</title>
+    </head>
+    <body>
+        <h1>Upload a CSV File</h1>
+        <form id="upload-form" action="/batch_predict/" method="post" enctype="multipart/form-data">
+            <input type="file" name="file_upload" accept=".csv" required>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="result"></div>
+
+        <script>
+            document.getElementById('upload-form').addEventListener('submit', async function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+            });
+        </script>
+    </body>
+    </html>
+    """

@@ -1,9 +1,9 @@
-from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from airflow.utils.dates import days_ago
 import requests
 import datetime
 import os
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+from airflow.utils.dates import days_ago
 
 def batch_predict_task():
     print("Current working directory:", os.getcwd())
@@ -12,7 +12,7 @@ def batch_predict_task():
     if not os.path.exists(file_path):
         print(f"File {file_path} does not exist!")
         return
-    url = 'http://localhost:80/batch_predict'
+    url = 'http://localhost:80/batch_predict2'
     files = {'file': open(file_path, 'rb')}
     response = requests.post(url, files=files)
     print(response.json())
@@ -28,7 +28,7 @@ default_args = {
 }
 
 dag = DAG(
-    'random_forest_batch_prediction',
+    'Spotify_batch_prediction',
     default_args=default_args,
     description='Batch predict using Random Forest model with preprocessing',
     schedule_interval='@daily',

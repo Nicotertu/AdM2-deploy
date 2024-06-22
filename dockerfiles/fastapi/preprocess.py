@@ -4,8 +4,8 @@ import custom_library as cl
 import pandas as pd
 
 def preprocess(original_data):
-    modified_data = original_data.copy()
-    columns_to_keep = ['acousticness', 'instrumentalness', 'key', 'mode', 'time_signature']
+    unmodified_data = original_data.copy()
+    columns_to_keep = ['label', 'acousticness', 'instrumentalness', 'key', 'mode', 'time_signature']
 
     # Step 1: 
     binarization = FunctionTransformer(lambda data: cl.binarize_variables(data))
@@ -25,10 +25,28 @@ def preprocess(original_data):
 
     # Step 6: 
     def add_columns_back(modified_data, original_data, columns_to_keep):
-        modified_data = pd.DataFrame(modified_data, columns=[col for col in original_data.columns if col not in columns_to_keep])
-        result = pd.concat([modified_data.reset_index(drop=True), original_data[columns_to_keep].reset_index(drop=True)], axis=1)
+        print("PLEASE SEND HELP 4")
+        print(type(modified_data))
+        print(modified_data.shape)
+        print(modified_data)
+        print(modified_data.columns)
+        result = pd.DataFrame(modified_data, columns=[col for col in original_data.columns if col not in columns_to_keep])
+        print("PLEASE SEND HELP 5")
+        print(type(result))
+        print(result.shape)
+        print(result)
+        result = pd.concat([result.reset_index(drop=True), original_data[columns_to_keep].reset_index(drop=True)], axis=1)
+        print("PLEASE SEND HELP 6")
+        print(type(result))
+        print(result.shape)
+        print(result)
+        result = result.drop('label', axis = 1)
+        print("PLEASE SEND HELP 7")
+        print(type(result))
+        print(result.shape)
+        print(result)
         return result
-    addition = FunctionTransformer(lambda data: add_columns_back(data, original_data, columns_to_keep), validate=False)
+    addition = FunctionTransformer(lambda data: add_columns_back(data, unmodified_data, columns_to_keep), validate=False)
 
     pipeline = Pipeline(steps=[
         ('binarization', binarization),
@@ -38,5 +56,14 @@ def preprocess(original_data):
         ('normalization', normalization),
         ('addition', addition)
     ])
+    print("PLEASE SEND HELP")
+    print(type(original_data))
+    print(original_data.shape)
+    print(original_data)
+    original_data = pipeline.fit_transform(original_data)
+    print("PLEASE SEND HELP 2")
+    print(type(original_data))
+    print(original_data.shape)
+    print(original_data)
 
-    return pipeline.fit_transform(original_data)
+    return original_data

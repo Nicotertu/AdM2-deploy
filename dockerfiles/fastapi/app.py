@@ -115,8 +115,12 @@ async def predict(file: UploadFile):
         print("CSV file parsed successfully")
         print(df.head())
 
-        processed_data = df.apply(preprocess, axis=1)
+        #processed_data = df.apply(preprocess, axis=1)
+        processed_data = preprocess(df)
         print("Data preprocessed successfully")
+        print(type(processed_data))
+        print(processed_data.shape)
+        print(processed_data)
 
         predictions = model.predict(processed_data)
         print("Model prediction completed")

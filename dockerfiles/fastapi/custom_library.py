@@ -8,23 +8,29 @@ from sklearn.impute import KNNImputer, IterativeImputer
 from sklearn.decomposition import PCA, FastICA
 
 def binarize_variables(data):
+    print(f'type: {type(data)}')
     data['acousticness'] = (data['acousticness'] > 0.05).astype(int)
     data['instrumentalness'] = (data['instrumentalness'] > 0.005).astype(int)
-    print("Debug stage 1 :(")
+    print("Debug stage 1")
+    print(f'type: {type(data)}')
     print(data)
     return data
 
 def drop_variables(data):
+    print(f'type: {type(data)}')
     data = data.drop('label', axis = 1, inplace = True)
     data = data.drop(['acousticness', 'instrumentalness', 'key', 'mode', 'time_signature'], axis = 1, inplace = True)
     print("Debug stage 2")
     print(data)
+    print(f'type: {type(data)}')
     return data
 
 def concat_variables(transformed_data, original_data, columns_to_keep):
+    print(f'type: {type(data)}')
     data = pd.concat([transformed_data.reset_index(drop=True), original_data[columns_to_keep].reset_index(drop=True)], axis=1)
     print("Debug stage 3")
     print(data)
+    print(f'type: {type(data)}')
     return data
 
 def compute_missing_data(data, method, testing = False, percentage = 0.15):
@@ -40,6 +46,7 @@ def compute_missing_data(data, method, testing = False, percentage = 0.15):
     Returns:
     pd.DataFrame: A DataFrame with missing values computed according to the specified method.
     """
+    print(f'type: {type(data)}')
     modified_data = data.copy()
     
     if testing:
@@ -83,6 +90,7 @@ def compute_missing_data(data, method, testing = False, percentage = 0.15):
     
     print("Debug stage 4")
     print(modified_data)
+    print(f'type: {type(data)}')
     return modified_data
 
 def test_normalidad(data, p_thres = 0.05):
@@ -139,6 +147,7 @@ def handle_outliers(data, method, imputation_method = 'KNN', winsorization_rate 
 
         # cambia todos los numeros que esten fuera de los limites superior e inferior a np.nan
         outlierless_data = compute_missing_data(modified_data, imputation_method, False, None)
+        print(f'type: {type(outlierless_data)}')
         return outlierless_data
     
     for column in modified_data.columns:
@@ -167,6 +176,7 @@ def handle_outliers(data, method, imputation_method = 'KNN', winsorization_rate 
 
     print("Debug stage 5")
     print(outlierless_data)
+    print(f'type: {type(outlierless_data)}')
     return outlierless_data
 
 def transform_data(data, method, p_thres):
@@ -181,6 +191,7 @@ def transform_data(data, method, p_thres):
     Returns:
     tuple: A tuple containing the transformed DataFrame and a list of methods used for each column.
     """
+    print(f'type: {type(data)}')
     modified_data = data.copy()
     method_used = []
 
@@ -229,6 +240,7 @@ def transform_data(data, method, p_thres):
             method_used.append(methods[index])
         print("Debug stage 6")
         print(modified_data)
+        print(f'type: {type(modified_data)}')
         return modified_data
     else:
         for column in modified_data.columns:
@@ -264,6 +276,7 @@ def transform_data(data, method, p_thres):
                 
     print("Debug stage 6")
     print(modified_data)
+    print(f'type: {type(modified_data)}')
     return modified_data
 
 def reduce_dimensionality(data, method, corr_thres = 0.95, var_thres = 0.01, normality_thres = 0.01, explained_var = 0.99, do_ica = False, filter_non_normal = False):
@@ -284,6 +297,7 @@ def reduce_dimensionality(data, method, corr_thres = 0.95, var_thres = 0.01, nor
     Returns:
     - DataFrame: Modified data after dimensionality reduction based on the chosen method.
     """
+    print(f'type: {type(data)}')
     #modified_data = data.copy()
 
     if method == 'Filter':
@@ -329,4 +343,5 @@ def reduce_dimensionality(data, method, corr_thres = 0.95, var_thres = 0.01, nor
 
     print("Debug stage 7")
     print(data)
+    print(f'type: {type(data)}')
     return data

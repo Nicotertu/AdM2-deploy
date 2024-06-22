@@ -103,8 +103,6 @@ minio_client = Minio(
     "minio:9000",
     access_key=os.getenv("MINIO_ACCESS_KEY"),
     secret_key=os.getenv("MINIO_SECRET_KEY"),
-#    access_key = '9ejgpfEbtOQiOwhnkl7k',
-#    secret_key = 'F1ndSWHgq2VDzjmzbpCdCOrI41H6tkYocQzzLJ02',
     secure=False
 )
 
@@ -115,7 +113,7 @@ def trigger_dag(file_location: str):
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.getenv('AIRFLOW_API_TOKEN')}"
+        "Authorization": "Bearer Ii9vcHQvYWlyZmxvdy9kYWdzL3Nwb3RpZnlfYmF0Y2hfcHJlZGljdF9taW5pby5weSI.X4OL1O2o4V_z32WBYn06bkRv_vs"
     }
     response = requests.post(airflow_url, json=data, headers=headers)
     print(data)
@@ -160,35 +158,26 @@ async def read_root():
 
 
 @app.post("/batch_predict/", response_model=list[ModelOutput])
-async def predict(file_upload: UploadFile = File(...)):
+async def predict2(file_upload: UploadFile):
     contents = await file_upload.read()
+    print("File read successfully")
+
     if not file_upload.content_type.startswith('text/csv'):
+        print("Unsupported file format")
         raise HTTPException(415, detail='Unsupported file format. Please upload a CSV file.')
     
     print(f"minio {minio_client}")
     bucket_name = "data"
     if not minio_client.bucket_exists(bucket_name):
         minio_client.make_bucket(bucket_name)
-    
-    file_location = f"{bucket_name}/{file_upload.filename}"
 
     minio_client.put_object(bucket_name, file_upload.filename, io.BytesIO(contents), len(contents))
-    
-    trigger_dag(file_location)
-    
-    return {"file_location": file_location}
+    print("File uploaded to minio successfully")
 
-
-@app.post("/batch_predict2/", response_model=list[ModelOutput])
-async def predict2(file_upload: UploadFile):
-    contents = await file_upload.read()
-    print("File read successfully")
+    #trigger_dag(file_location)
+    #return {"file_location": file_location}
 
     try:
-        if not file_upload.content_type.startswith('text/csv'):
-            print("Unsupported file format")
-            raise HTTPException(415, detail='Unsupported file format. Please upload a CSV file.')
-
         df = pd.read_csv(io.BytesIO(contents), sep=',')
         print("CSV file parsed successfully")
         print(df.head())
@@ -196,9 +185,6 @@ async def predict2(file_upload: UploadFile):
         #processed_data = df.apply(preprocess, axis=1)
         processed_data = preprocess(df)
         print("Data preprocessed successfully")
-        print(type(processed_data))
-        print(processed_data.shape)
-        print(processed_data)
 
         predictions = model.predict(processed_data)
         print("Model prediction completed")
@@ -211,9 +197,11 @@ async def predict2(file_upload: UploadFile):
         liked_count = sum(predictions)
         disliked_count = len(predictions) - liked_count
 
-        return [ModelOutput(int_output=bool(p), song_output=song_predictions[i])
-                for i, p in enumerate(predictions.flatten())]
+        # For individual results
+        #return [ModelOutput(int_output=bool(p), song_output=song_predictions[i])
+        #        for i, p in enumerate(predictions.flatten())]
 
+        # For grouped results
         html_start = """
         <!DOCTYPE html>
         <html lang="en">
@@ -277,7 +265,8 @@ async def predict2(file_upload: UploadFile):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         raise HTTPException(500, detail='Internal server error during prediction.')
-    
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/batch_predict/", response_class=HTMLResponse)

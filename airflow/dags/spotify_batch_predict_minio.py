@@ -13,7 +13,7 @@ def batch_predict_task(**kwargs):
         secret_key=os.getenv("MINIO_SECRET_KEY"),
         secure=False
     )
-
+    
     file_location = kwargs['dag_run'].conf.get('file_location', '')
     if not file_location:
         print("No file location provided!")
@@ -22,7 +22,8 @@ def batch_predict_task(**kwargs):
     bucket_name, object_name = file_location.split('/', 1)
 
     response = minio_client.get_object(bucket_name, object_name)
-    file_path = f"/tmp/{object_name}"
+    file_path = "/opt/airflow/dags/data_playlist.csv"
+    #file_path = f"/tmp/{object_name}"
     with open(file_path, "wb") as file_data:
         for d in response.stream(32 * 1024):
             file_data.write(d)
@@ -44,7 +45,7 @@ dag = DAG(
     'Spotify_batch_prediction_minio',
     default_args=default_args,
     description='Batch predict using Random Forest model with preprocessing',
-    schedule_interval=None,
+    schedule_interval='@daily',
     start_date=days_ago(1),
 )
 
